@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Message format for water level measurements from Arduino sensor",
+  "type": "object",
+  "properties": {
+    "distance": { "$ref": "#/definitions/distance" },
+    "last_update": { "$ref": "#/definitions/last_update" }
+  },
+  "required": [ "distance", "last_update" ],
+  "definitions": {
+    "distance": {
+      "description": "Distance measurement",
+      "type": "object",
+      "properties": {
+        "value": { "$ref": "#/definitions/distance_value" },
+        "units": { "type": "string", "enum": [ "mm" ] }
+      },
+      "required": [ "value", "units" ]
+    },
+    "last_update": {
+      "description": "Time elapsed since last measurement update",
+      "type": "object",
+      "properties": {
+        "value": { "$ref": "#/definitions/last_update_value" },
+        "units": { "type": "string", "enum": [ "s" ] }
+      },
+      "required": [ "value", "units" ]
+    },
+    "distance_value": {
+      "description": "Water level in mm",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5000
+    },
+    "last_update_value": {
+      "description": "Seconds since last measurement update",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

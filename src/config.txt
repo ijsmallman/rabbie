@@ -1,0 +1,1 @@
+level_sensor_hostname = WIZnet10FBFE
