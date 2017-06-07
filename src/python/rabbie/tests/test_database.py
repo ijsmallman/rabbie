@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 from os.path import join, dirname, exists
-import datetime
+from datetime import datetime, timezone
 import logging
 import uuid
 from rabbie.database import DataBase
@@ -20,7 +20,62 @@ slow = pytest.mark.skipif(
 def test_create_database(tmpdir):
     db_no_ext = tmpdir.join('{}'.format(uuid.uuid4()))
     db_with_ext = tmpdir.join('{}.db'.format(uuid.uuid4()))
-    db1 = DataBase(db_no_ext.strpath)
-    db2 = DataBase(db_with_ext.strpath)
+    DataBase(db_no_ext.strpath)
+    DataBase(db_with_ext.strpath)
     assert exists('{}.db'.format(db_no_ext))
     assert exists('{}'.format(db_with_ext))
+
+
+def test_insert_vals_and_count_entries(tmpdir):
+    db_path = tmpdir.join('{}'.format(uuid.uuid4()))
+    db = DataBase(db_path.strpath)
+    n = 10
+    for i in range(n):
+        db.insert_val('test', datetime.utcnow(), i)
+    assert db.entry_count('test') == n
+    assert db.entry_count('made_up_name') == 0
+
+
+@pytest.fixture(scope='session')
+def test_db(tmpdir_factory):
+    db_path = tmpdir_factory.mktemp('db').join('test_db.db')
+    db = DataBase(db_path.strpath)
+
+    entries = [(datetime(2017, 1, 1, 0, 0, 0, 0), 0),
+               (datetime(2017, 3, 1, 0, 0, 0, 0), 1),
+               (datetime(2017, 6, 1, 0, 0, 0, 0), 2)]
+    for t, v in entries:
+        db.insert_val('test', t, v)
+    return db
+
+
+def test_fetch_all_vals(test_db):
+    vals = test_db.fetch_values()
+    assert len(vals) == 3
+
+
+def test_fetch_from_date(test_db):
+    vals = test_db.fetch_values(from_datetime=datetime(2017, 1, 1, 12, 0, 0))
+    assert len(vals) == 2
+    fetched_times = [v['timestamp'] for v in vals]
+    for t in [datetime(2017, 3, 1, 0, 0, 0),
+              datetime(2017, 6, 1, 0, 0, 0)]:
+        assert (t in fetched_times)
+    assert ((datetime(2017, 1, 1, 0, 0, 0), 0) not in fetched_times)
+
+
+def test_fetch_to_date(test_db):
+    vals = test_db.fetch_values(to_datetime=datetime(2017, 4, 1, 0, 0, 0))
+    assert len(vals) == 2
+    fetched_times = [v['timestamp'] for v in vals]
+    for t in [datetime(2017, 1, 1, 0, 0, 0),
+              datetime(2017, 3, 1, 0, 0, 0)]:
+        assert (t in fetched_times)
+    assert ((datetime(2017, 6, 1, 0, 0, 0), 0) not in fetched_times)
+
+
+def test_fetch_between_dates(test_db):
+    vals = test_db.fetch_values(to_datetime=datetime(2017, 4, 1, 0, 0, 0),
+                                from_datetime=datetime(2017, 1, 1, 12, 0, 0))
+    assert len(vals) == 1
+    assert datetime(2017, 3, 1, 0, 0, 0) == vals[0]['timestamp']

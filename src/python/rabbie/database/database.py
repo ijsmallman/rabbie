@@ -1,9 +1,12 @@
 import sqlite3
 import datetime
 import logging
-
+from typing import List
 
 logger = logging.getLogger(__name__)
+
+
+TABLE_NAME = "readings"
 
 
 class DataBase:
@@ -21,10 +24,15 @@ class DataBase:
             self.name = name
         else:
             self.name = '{}.db'.format(name)
-        self.conn = sqlite3.connect(self.name)
+        self.conn = sqlite3.connect(self.name, detect_types=sqlite3.PARSE_DECLTYPES)
+        self.conn.row_factory = dict_factory
+
+        query = 'CREATE table IF NOT EXISTS ' + \
+                TABLE_NAME + ' ' \
+                '([timestamp] TIMESTAMP, name STRING, value INT, is_synced INT)'
 
         c = self.conn.cursor()
-        c.execute('CREATE table IF NOT EXISTS measurements (timestamp DATETIME, name STRING, value INT, is_synced INT)')
+        c.execute(query)
         self.conn.commit()
 
         logger.debug('Connected to DB {}'.format(self.name))
@@ -41,14 +49,87 @@ class DataBase:
             name to associate with value (non-unique)
         value: int
             value to log in DB
+            
+        Notes
+        -----
+        sqlite3 has a bug that results in an error during fetch if timestamp has a timezone. 
         """
-        timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%SZ')
+        query = "INSERT INTO " + \
+                TABLE_NAME + " " + \
+                "VALUES (?, ?, ?, ?)"
         c = self.conn.cursor()
-        c.execute("INSERT INTO measurements VALUES (?, ?, ?, ?)",
+        c.execute(query,
                   (timestamp,       # timestamp
-                   name,   # name
+                   name,            # name
                    value,           # value
                    0))              # is_synced=False
         self.conn.commit()
 
         logger.info('Logged sensor reading ({}, {})'.format(timestamp, value))
+
+    def entry_count(self, name: str) -> int:
+        """
+        Count database entries with given name
+        
+        Parameters
+        ----------
+        name: str
+            entry name to count
+
+        Returns
+        -------
+        counts: int
+            number of entries with name in database
+        """
+        query = "SELECT COUNT(*) from " + \
+                TABLE_NAME + " " + \
+                "WHERE name=?"
+        c = self.conn.cursor()
+        rows = c.execute(query, (name,)).fetchone()['COUNT(*)']
+        return rows
+
+    def fetch_values(self,
+                     from_datetime: datetime.datetime=None,
+                     to_datetime: datetime.datetime=None) -> List[dict]:
+        """
+        
+        Parameters
+        ----------
+        from_datetime: datetime.datetime
+            start timestamp (default: None)
+        to_datetime: datetime.datetime
+            end timestamp (default: None)
+
+        Returns
+        -------
+        entries: List[dict]
+            database entries
+        """
+        c = self.conn.cursor()
+
+        if (from_datetime is None) and (to_datetime is None):
+            c.execute("SELECT * FROM " + TABLE_NAME)
+
+        elif from_datetime is None:
+            c.execute('SELECT * FROM ' +
+                      TABLE_NAME + ' ' +
+                      'WHERE timestamp <= ?', (to_datetime,))
+
+        elif to_datetime is None:
+            c.execute('SELECT * FROM ' +
+                      TABLE_NAME + ' ' +
+                      'WHERE timestamp >= ?', (from_datetime,))
+        else:
+            c.execute('SELECT * FROM ' +
+                      TABLE_NAME + ' ' +
+                      'WHERE timestamp BETWEEN ? and ?', (from_datetime, to_datetime))
+
+        entries = c.fetchall()
+        return entries
+
+
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
