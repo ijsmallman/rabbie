@@ -5,12 +5,17 @@ setup(
     version='0.0.1',
     author='Joe Smallman',
     author_email='ijsmallman@gmail.com',
-    description='Package to add smart home logging and notification funcionlity to holiday cottage in Scotland',
+    description='Package to add smart home logging and notification functionality to holiday cottage in Scotland',
     packages=[
       'rabbie.level_logger',
-      'rabbie.database'
+      'rabbie.database',
+      'rabbie.level_publish'
+        
     ],
-    entry_points = {
-        'console_scripts': ['log-level=rabbie.level_logger.main:main'],
+    entry_points={
+        'console_scripts': [
+            'log-level=rabbie.level_logger.main:main',
+            'pub-level=rabbie.level_publish.main:main'
+        ],
     }
 )
