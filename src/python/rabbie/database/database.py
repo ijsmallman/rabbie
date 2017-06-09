@@ -88,10 +88,11 @@ class DataBase:
         rows = c.execute(query, (name,)).fetchone()['COUNT(*)']
         return rows
 
-    def fetch_values(self,
-                     from_datetime: datetime.datetime=None,
-                     to_datetime: datetime.datetime=None) -> List[dict]:
+    def fetch_entries(self,
+                      from_datetime: datetime.datetime=None,
+                      to_datetime: datetime.datetime=None) -> List[dict]:
         """
+        Fetch entries from database
         
         Parameters
         ----------
@@ -127,9 +128,43 @@ class DataBase:
         entries = c.fetchall()
         return entries
 
+    def fetch_entry(self, timestamp: datetime) -> dict:
+        """
+        Fetch single entry from database by timestamp
+        
+        Parameters
+        ----------
+        timestamp: datetime.datetime
+            timestamp for database entry
+
+        Returns
+        -------
+        entry: dict
+            the database entry
+        """
+        c = self.conn.cursor()
+        c.execute('SELECT * FROM ' +
+                  TABLE_NAME + ' ' +
+                  'WHERE timestamp = ?',
+                  (timestamp,))
+        entry = c.fetchone()
+        return entry
+
+    def update_sync_status(self,
+                           timestamp: datetime.datetime,
+                           status: bool) -> None:
+        c = self.conn.cursor()
+        c.execute('UPDATE ' + TABLE_NAME + ' SET ' +
+                  'is_synced = ? WHERE timestamp = ?',
+                  (int(status), timestamp))
+        self.conn.commit()
+
 
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
+        if col[0] == 'is_synced':
+            d[col[0]] = (True if row[idx] == 1 else False)
+        else:
+            d[col[0]] = row[idx]
     return d
