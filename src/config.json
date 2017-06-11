@@ -1,0 +1,6 @@
+{
+  "hostname": "WIZnet10FBFE",
+  "server_url": "test.db",
+  "api_key": "secret_key_3",
+  "database": "sensor_readings.db"
+}

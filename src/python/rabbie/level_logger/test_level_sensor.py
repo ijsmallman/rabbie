@@ -1,8 +1,7 @@
 import pytest
 from unittest.mock import patch
-from os.path import join, dirname
 import datetime
-from rabbie.level_logger.sensor import LevelSensor, MEASUREMENT_SCHEMA_FILENAME
+from rabbie.level_logger.sensor import LevelSensor
 import logging
 
 
@@ -46,29 +45,6 @@ def mocked_http_request():
 @pytest.fixture(scope='module')
 def fake_level_sensor():
     return LevelSensor('fake-sensor')
-
-
-def test_import_schema_error():
-    with pytest.raises(IOError):
-        LevelSensor.load_schema('made_up_path.json')
-
-
-def test_import_valid_schema():
-    schema_path = join(dirname(dirname(dirname(dirname(__file__)))),
-                       "schemas",
-                       MEASUREMENT_SCHEMA_FILENAME)
-    schema = LevelSensor.load_schema(schema_path)
-    assert isinstance(schema, dict)
-
-
-def test_validation_error():
-    invalid_msg = {}
-    with pytest.raises(IOError):
-        LevelSensor.validate_message(invalid_msg)
-
-
-def test_validation(valid_reading):
-    LevelSensor.validate_message(valid_reading)
 
 
 @patch('rabbie.level_logger.sensor.current_system_time', side_effect=mocked_get_utc_now)

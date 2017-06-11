@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Schema for Project Rabbie config file",
+  "type": "object",
+  "properties": {
+      "hostname": {
+        "type": "string",
+        "description": "Hostname for water level sensor"
+      },
+      "api_key": {
+        "type": "string",
+        "description": "Authentication key for posting senor readings to a server"
+      },
+      "server_url": {
+        "type": "string",
+        "description": "URL for remote server"
+      },
+      "database": {
+        "type": "string",
+        "description": "File path to database where sensor readings are stored localy"
+      }
+  }
+}
