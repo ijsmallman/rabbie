@@ -18,6 +18,19 @@
       "database": {
         "type": "string",
         "description": "File path to database where sensor readings are stored localy"
+      },
+      "smtp_port": {
+        "type": "number",
+        "description": "SMTP server port"
+      },
+      "smtp_server": {
+        "type": "string",
+        "description": "SMTP server"
+      },
+      "recipients": {
+        "type": "array",
+        "items": "string",
+        "description": "Emails to notify with status updates"
       }
   }
 }
