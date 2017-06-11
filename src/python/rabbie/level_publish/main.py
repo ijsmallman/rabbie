@@ -4,6 +4,7 @@ import logging
 from typing import List
 
 from rabbie.database import DataBase
+from rabbie.level_publish import Publisher
 from rabbie.utils import init_root_logger, load_config
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,16 @@ def main() -> None:
     config = load_config(parsed_args.config)
 
     db = DataBase(name=config["database"])
+    publisher = Publisher(url=config['server_url'],
+                          api_token=config['api_token'])
 
+    entries = db.fetch_entries(filter_synced=True)
+    logger.info('Found {} entries in {} to push to server'.format(len(entries),
+                                                                  config['database']))
+
+    for entry in entries:
+        publisher.push_entry(entry)
+        db.update_sync_status(entry['measured-at'], True)
 
 if __name__ == '__main__':
     main()

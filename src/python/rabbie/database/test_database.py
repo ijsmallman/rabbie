@@ -51,7 +51,7 @@ def test_fetch_all_vals(test_db):
 def test_fetch_from_date(test_db):
     vals = test_db.fetch_entries(from_datetime=datetime(2017, 1, 1, 12, 0, 0))
     assert len(vals) == 2
-    fetched_times = [v['timestamp'] for v in vals]
+    fetched_times = [v['measured-at'] for v in vals]
     for t in [datetime(2017, 3, 1, 0, 0, 0),
               datetime(2017, 6, 1, 0, 0, 0)]:
         assert (t in fetched_times)
@@ -61,7 +61,7 @@ def test_fetch_from_date(test_db):
 def test_fetch_to_date(test_db):
     vals = test_db.fetch_entries(to_datetime=datetime(2017, 4, 1, 0, 0, 0))
     assert len(vals) == 2
-    fetched_times = [v['timestamp'] for v in vals]
+    fetched_times = [v['measured-at'] for v in vals]
     for t in [datetime(2017, 1, 1, 0, 0, 0),
               datetime(2017, 3, 1, 0, 0, 0)]:
         assert (t in fetched_times)
@@ -72,21 +72,67 @@ def test_fetch_between_dates(test_db):
     vals = test_db.fetch_entries(to_datetime=datetime(2017, 4, 1, 0, 0, 0),
                                  from_datetime=datetime(2017, 1, 1, 12, 0, 0))
     assert len(vals) == 1
-    assert datetime(2017, 3, 1, 0, 0, 0) == vals[0]['timestamp']
+    assert datetime(2017, 3, 1, 0, 0, 0) == vals[0]['measured-at']
 
 
 def test_fetch_datetime(test_db):
     t = datetime(2017, 3, 1, 0, 0, 0)
     val = test_db.fetch_entry(t)
     assert val is not None
-    assert val['timestamp'] == t
+    assert val['measured-at'] == t
 
 
 def test_update_status(test_db):
     t = datetime(2017, 3, 1, 0, 0, 0)
     test_db.update_sync_status(t, True)
     val = test_db.fetch_entry(t)
-    assert val['is_synced']
+    assert val['is-synced']
     test_db.update_sync_status(t, False)
     val = test_db.fetch_entry(t)
-    assert not val['is_synced']
+    assert not val['is-synced']
+
+
+def test_fetch_unsynced(test_db):
+    t = datetime(2017, 3, 1, 0, 0, 0)
+    test_db.update_sync_status(t, True)
+
+    vals = test_db.fetch_entries(filter_synced=True)
+    assert len(vals) == 2
+    assert t not in [v['measured-at'] for v in vals]
+    test_db.update_sync_status(t, False)
+
+
+def test_fetch_unsynced_from_date(test_db):
+    t = datetime(2017, 3, 1, 0, 0, 0)
+    test_db.update_sync_status(t, True)
+
+    vals = test_db.fetch_entries(from_datetime=datetime(2017, 2, 1, 12, 0, 0),
+                                 filter_synced=True)
+    assert len(vals) == 1
+    assert datetime(2017, 6, 1, 0, 0, 0) == vals[0]['measured-at']
+
+    test_db.update_sync_status(t, False)
+
+
+def test_fetch_unsynced_to_date(test_db):
+    t = datetime(2017, 3, 1, 0, 0, 0)
+    test_db.update_sync_status(t, True)
+
+    vals = test_db.fetch_entries(to_datetime=datetime(2017, 4, 1, 12, 0, 0),
+                                 filter_synced=True)
+    assert len(vals) == 1
+    assert datetime(2017, 1, 1, 0, 0, 0) == vals[0]['measured-at']
+
+    test_db.update_sync_status(t, False)
+
+
+def test_fetch_unsynced_to_date(test_db):
+    t = datetime(2017, 3, 1, 0, 0, 0)
+    test_db.update_sync_status(t, True)
+
+    vals = test_db.fetch_entries(from_datetime=datetime(2017, 2, 1, 12, 0, 0),
+                                 to_datetime=datetime(2017, 4, 1, 12, 0, 0),
+                                 filter_synced=True)
+    assert len(vals) == 0
+
+    test_db.update_sync_status(t, False)

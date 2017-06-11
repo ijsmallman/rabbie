@@ -29,7 +29,7 @@ class DataBase:
 
         query = 'CREATE table IF NOT EXISTS ' + \
                 TABLE_NAME + ' ' \
-                '([timestamp] TIMESTAMP, name STRING, value INT, is_synced INT)'
+                '([measured-at] TIMESTAMP, name STRING, value INT, [is-synced] INT)'
 
         c = self.conn.cursor()
         c.execute(query)
@@ -62,7 +62,7 @@ class DataBase:
                   (timestamp,       # timestamp
                    name,            # name
                    value,           # value
-                   0))              # is_synced=False
+                   0))              # is-synced=False
         self.conn.commit()
 
         logger.info('Logged sensor reading ({}, {})'.format(timestamp, value))
@@ -90,7 +90,8 @@ class DataBase:
 
     def fetch_entries(self,
                       from_datetime: datetime.datetime=None,
-                      to_datetime: datetime.datetime=None) -> List[dict]:
+                      to_datetime: datetime.datetime=None,
+                      filter_synced: bool=False) -> List[dict]:
         """
         Fetch entries from database
         
@@ -100,6 +101,8 @@ class DataBase:
             start timestamp (default: None)
         to_datetime: datetime.datetime
             end timestamp (default: None)
+        filter_synced: bool
+            filter out all synced data (default: False)
 
         Returns
         -------
@@ -109,21 +112,44 @@ class DataBase:
         c = self.conn.cursor()
 
         if (from_datetime is None) and (to_datetime is None):
-            c.execute("SELECT * FROM " + TABLE_NAME)
+            if filter_synced:
+                c.execute("SELECT * FROM " +
+                          TABLE_NAME + " " +
+                          "WHERE [is-synced] = ?", (0,))
+            else:
+                c.execute("SELECT * FROM " + TABLE_NAME)
 
         elif from_datetime is None:
-            c.execute('SELECT * FROM ' +
-                      TABLE_NAME + ' ' +
-                      'WHERE timestamp <= ?', (to_datetime,))
+            if filter_synced:
+                c.execute('SELECT * FROM ' +
+                          TABLE_NAME + ' ' +
+                          'WHERE timestamp <= ? ' +
+                          'AND [is-synced] = ?', (to_datetime, 0))
+            else:
+                c.execute('SELECT * FROM ' +
+                          TABLE_NAME + ' ' +
+                          'WHERE [measured-at] <= ?', (to_datetime,))
 
         elif to_datetime is None:
-            c.execute('SELECT * FROM ' +
-                      TABLE_NAME + ' ' +
-                      'WHERE timestamp >= ?', (from_datetime,))
+            if filter_synced:
+                c.execute('SELECT * FROM ' +
+                          TABLE_NAME + ' ' +
+                          'WHERE [measured-at] >= ? ' +
+                          'AND [is-synced] = ?', (from_datetime, 0))
+            else:
+                c.execute('SELECT * FROM ' +
+                          TABLE_NAME + ' ' +
+                          'WHERE [measured-at] >= ?', (from_datetime,))
         else:
-            c.execute('SELECT * FROM ' +
-                      TABLE_NAME + ' ' +
-                      'WHERE timestamp BETWEEN ? and ?', (from_datetime, to_datetime))
+            if filter_synced:
+                c.execute('SELECT * FROM ' +
+                          TABLE_NAME + ' ' +
+                          'WHERE [is-synced] = ? ' +
+                          'AND [measured-at] BETWEEN ? AND ?', (0, from_datetime, to_datetime))
+            else:
+                c.execute('SELECT * FROM ' +
+                          TABLE_NAME + ' ' +
+                          'WHERE [measured-at] BETWEEN ? AND ?', (from_datetime, to_datetime))
 
         entries = c.fetchall()
         return entries
@@ -145,7 +171,7 @@ class DataBase:
         c = self.conn.cursor()
         c.execute('SELECT * FROM ' +
                   TABLE_NAME + ' ' +
-                  'WHERE timestamp = ?',
+                  'WHERE [measured-at] = ?',
                   (timestamp,))
         entry = c.fetchone()
         return entry
@@ -155,7 +181,7 @@ class DataBase:
                            status: bool) -> None:
         c = self.conn.cursor()
         c.execute('UPDATE ' + TABLE_NAME + ' SET ' +
-                  'is_synced = ? WHERE timestamp = ?',
+                  '[is-synced] = ? WHERE [measured-at] = ?',
                   (int(status), timestamp))
         self.conn.commit()
 
@@ -163,7 +189,7 @@ class DataBase:
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
-        if col[0] == 'is_synced':
+        if col[0] == 'is-synced':
             d[col[0]] = (True if row[idx] == 1 else False)
         else:
             d[col[0]] = row[idx]

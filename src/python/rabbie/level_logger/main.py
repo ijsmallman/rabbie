@@ -2,8 +2,6 @@ import argparse
 import sys
 import logging
 from typing import List
-import json
-from os.path import join, dirname
 
 from rabbie.database import DataBase
 from rabbie.level_logger.sensor import LevelSensor

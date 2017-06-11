@@ -7,9 +7,9 @@
         "type": "string",
         "description": "Hostname for water level sensor"
       },
-      "api_key": {
+      "api_token": {
         "type": "string",
-        "description": "Authentication key for posting senor readings to a server"
+        "description": "Authentication token for posting senor readings to a server"
       },
       "server_url": {
         "type": "string",
