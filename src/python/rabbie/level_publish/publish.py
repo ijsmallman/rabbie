@@ -1,5 +1,6 @@
 from urllib import request, parse
 import logging
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ class Publisher:
             if request fails
         """
         logger.info("Pushing entry '{}' to '{}'".format(entry, self.url))
-        data = parse.urlencode(entry).encode('utf-8')
+        data = json.dumps(entry, default=str).encode('utf-8')
         req = request.Request(self.url,
                               data=data,
                               headers={'content-type': 'application/json',
@@ -36,4 +37,13 @@ class Publisher:
             request.urlopen(req)
         except Exception as e:
             logger.error(e)
-            raise IOError("Cannot push entry '{}' to {}".format(entry, self.url)) from e
+            raise IOError("Cannot push entry '{}' to {}".format(data, self.url)) from e
+
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    import datetime
+    if isinstance(obj, datetime.datetime):
+        serial = obj.isoformat()
+        return serial
+    raise TypeError ("Type %s not serializable" % type(obj))

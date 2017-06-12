@@ -29,8 +29,12 @@
       },
       "recipients": {
         "type": "array",
-        "items": "string",
+        "items": { "type": "string" },
         "description": "Emails to notify with status updates"
+      },
+      "notification_water_level": {
+        "type": "number",
+        "description": "Notify recipients when water level exceeds this value"
       }
   }
 }
