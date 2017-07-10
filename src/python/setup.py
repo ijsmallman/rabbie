@@ -9,13 +9,15 @@ setup(
     packages=[
       'rabbie.level_logger',
       'rabbie.database',
-      'rabbie.level_publish'
-        
+      'rabbie.level_publish',
+      'rabbie.ui',
+      'rabbie.utils'
     ],
     entry_points={
         'console_scripts': [
             'log-level=rabbie.level_logger.main:main',
-            'pub-level=rabbie.level_publish.main:main'
+            'pub-level=rabbie.level_publish.main:main',
+            'gui=rabbie.ui.main:main'
         ],
     }
 )
