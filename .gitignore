@@ -109,3 +109,6 @@ ENV/
 
 #DB
 *.db
+
+#SECRETS
+/secrets/*.json
