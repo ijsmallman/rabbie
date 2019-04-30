@@ -3,7 +3,6 @@ from rabbie import google_auth, GoogleAuthError
 from rabbie import DriveService
 logger = logging.getLogger(__name__)
 
-
 def main() -> int:
     """
     Upload an image to Google Drive

@@ -1,3 +1,7 @@
+import logging
+
+logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
+
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 
