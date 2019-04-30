@@ -1,9 +1,10 @@
 import os
 import pickle
+import logging
 from os.path import join, dirname
-from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 SECRETS_PATH = join(
@@ -14,47 +15,48 @@ TOKEN_FILENAME = "token.pickle"
 CREDENTIALS_FILENAME = "credentials.json"
 
 
+logger = logging.getLogger(__name__)
+
+
 class GoogleAuthError(Exception):
     pass
 
 
-class GoogleAuth:
+def google_auth(headless: bool = False) -> 'Credentials':
 
-    def __init__(self) -> None:
+    token_path = join(SECRETS_PATH, TOKEN_FILENAME)
+    credentials_path = join(SECRETS_PATH, CREDENTIALS_FILENAME)
 
-        token_path = join(SECRETS_PATH, TOKEN_FILENAME)
-        credentials_path = join(SECRETS_PATH, CREDENTIALS_FILENAME)
+    credentials = None
+    if os.path.exists(token_path):
+        try:
+            with open(token_path, 'rb') as token:
+                credentials = pickle.load(token)
+        except IOError as e:
+            logger.error("Failed to load api token. %s", e)
+            raise GoogleAuthError
 
-        creds = None
-        if os.path.exists(token_path):
-                with open(token_path, 'rb') as token:
-                    creds = pickle.load(token)
+    # If there are no (valid) credentials available, let the user log in.
+    if not credentials or not credentials.valid:
+        if headless:
+            logger.error("Failed to authorise application")
+            raise GoogleAuthError
 
-        # If there are no (valid) credentials available, let the user log in.
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
+        else:
+            if credentials and credentials.expired and credentials.refresh_token:
+                credentials.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     credentials_path,
                     SCOPES
                 )
-                creds = flow.run_local_server()
-
+                credentials = flow.run_local_server()
+    
             # Save the credentials for the next run
-            with open(token_path, 'wb') as token:
-                pickle.dump(creds, token)
+            try:
+                with open(token_path, 'wb') as token:
+                    pickle.dump(credentials, token)
+            except IOError as e:
+                logger.error("Failed to save api token to %s. %s", token_path, e)
 
-        service = build('drive', 'v3', credentials=creds)
-
-        # Call the Drive v3 API
-        results = service.files().list(
-            pageSize=10, fields="nextPageToken, files(id, name)").execute()
-        items = results.get('files', [])
-
-        if not items:
-            print('No files found.')
-        else:
-            print('Files:')
-            for item in items:
-                print(u'{0} ({1})'.format(item['name'], item['id']))
+    return credentials

@@ -1,5 +1,6 @@
 import logging
-from rabbie import GoogleAuth, GoogleAuthError
+from rabbie import google_auth, GoogleAuthError
+from rabbie import DriveService
 logger = logging.getLogger(__name__)
 
 
@@ -9,8 +10,15 @@ def main() -> int:
     """
 
     try:
-        session = GoogleAuth()
+        credentials = google_auth()
     except GoogleAuthError:
+        return 1
+
+    try:
+        service = DriveService(credentials)
+        service.list_files()
+    except Exception as e:
+        logger.error(e)
         return 1
 
     return 0
