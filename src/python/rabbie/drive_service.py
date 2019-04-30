@@ -116,7 +116,11 @@ class DriveService:
 
         folder_id = folder.get('id')
 
-        logger.info("Created folder with ID %s", folder_id)
+        logger.info(
+            "Created folder %s with ID %s",
+            folder_name,
+            folder_id
+        )
 
         return folder_id
 
@@ -177,6 +181,10 @@ class DriveService:
 
         file_id = file.get('id')
 
-        logger.info('Uploaded file with ID: %s', file_id)
+        logger.info(
+            'Uploaded file %s with ID: %s',
+            file_path,
+            file_id
+        )
 
         return file_id
