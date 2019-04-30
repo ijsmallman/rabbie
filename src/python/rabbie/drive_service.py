@@ -26,8 +26,8 @@ class DriveServiceError(Exception):
 
 class DriveService:
 
-    def __init__(self, creds: 'Credentials') -> None:
-        self._service = build('drive', 'v3', credentials=creds)
+    def __init__(self, credentials: 'Credentials') -> None:
+        self._service = build('drive', 'v3', credentials=credentials)
 
     def list_files(self) -> Dict[str, str]:
         """
