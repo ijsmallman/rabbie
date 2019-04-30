@@ -1,21 +1,16 @@
 import logging
-from rabbie import Credentials, CredentialsError, GoogleApiSession, GoogleApiSessionError
-
+from rabbie import GoogleAuth, GoogleAuthError
 logger = logging.getLogger(__name__)
 
 
 def main() -> int:
     """
-    Upload an image to Google Photos
+    Upload an image to Google Drive
     """
-    try:
-        credentials = Credentials.from_secrets('photos_api_credentials.json')
-    except CredentialsError:
-        return 1
 
     try:
-        session = GoogleApiSession(credentials)
-    except GoogleApiSessionError:
+        session = GoogleAuth()
+    except GoogleAuthError:
         return 1
 
     return 0
@@ -28,7 +23,7 @@ if __name__ == '__main__':
     from os import makedirs
     from os.path import join, dirname, exists
 
-    parser = argparse.ArgumentParser('Upload an image to Google Photos')
+    parser = argparse.ArgumentParser('Upload an image to Google Drive')
     parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
 

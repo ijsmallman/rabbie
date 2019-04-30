@@ -106,9 +106,12 @@ ENV/
 #IDE
 .idea
 .idea/
+.vscode
+.vscode/
 
 #DB
 *.db
 
 #SECRETS
 /secrets/*.json
+/secrets/*.pickle
