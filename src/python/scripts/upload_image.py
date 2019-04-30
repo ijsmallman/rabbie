@@ -1,11 +1,23 @@
 import logging
+import platform
 from rabbie import google_auth, GoogleAuthError
-from rabbie import DriveService
+from rabbie import DriveService, DriveServiceError
 logger = logging.getLogger(__name__)
 
-def main() -> int:
+
+def upload(image_path: str) -> int:
     """
-    Upload an image to Google Drive
+    Upload an image to Google Drive under folder named with computer hostname
+
+    Parameters
+    ----------
+    image_path: str
+        Path to image to upload
+
+    Returns
+    -------
+    status_code: int
+        Standard error code
     """
 
     try:
@@ -13,10 +25,12 @@ def main() -> int:
     except GoogleAuthError:
         return 1
 
+    hostname = platform.node()
+
     try:
         service = DriveService(credentials)
-        service.list_files()
-    except Exception as e:
+        service.upload_image(image_path, hostname)
+    except DriveServiceError as e:
         logger.error(e)
         return 1
 
@@ -32,6 +46,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Upload an image to Google Drive')
     parser.add_argument('--debug', action='store_true')
+    parser.add_argument('image', type=str, help='Path to image file')
     args = parser.parse_args()
 
     if args.debug:
@@ -53,6 +68,6 @@ if __name__ == '__main__':
         filename=join(log_dir, 'upload_image.log')
     )
 
-    status_code = main()
+    status_code = upload(args.image)
 
     sys.exit(status_code)
