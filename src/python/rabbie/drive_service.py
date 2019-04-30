@@ -44,7 +44,9 @@ class DriveService:
         """
         try:
             results = self._service.files().list(
-                pageSize=10, fields="nextPageToken, files(id, name)"
+                q='trashed=false',
+                pageSize=10,
+                fields="nextPageToken, files(id, name)"
             ).execute()
         except HttpError as e:
             logger.error("Failed to list all files in Drive. %s", e)
